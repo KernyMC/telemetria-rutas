@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FV · Telemetría & Rutas</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!-- Estilos propios -->
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- =========================== SIDEBAR =========================== -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="brand">
+      <div class="brand-mark"><i data-lucide="route"></i></div>
+      <div class="brand-text">
+        <div class="title">FV Telemetría</div>
+        <div class="subtitle">Auditoría de Rutas GPS</div>
+      </div>
+      <button class="close-sidebar-btn" id="closeSidebarBtn" aria-label="Cerrar panel"><i data-lucide="x"></i></button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="audit"><i data-lucide="scan-search"></i>Auditoría</button>
+      <button class="tab-btn" data-tab="plan"><i data-lucide="waypoints"></i>Planificar Ruta</button>
+      <button class="tab-btn" data-tab="admin"><i data-lucide="users-round"></i>Administrar</button>
+    </div>
+
+    <!-- ---------------- TAB: AUDITORÍA ---------------- -->
+    <div class="tab-panel active" id="panel-audit">
+      <div class="sidebar-scroll">
+
+        <div>
+          <div class="section-label">Cargar viaje</div>
+          <div style="height:10px"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="loadCsvBtn"><i data-lucide="upload"></i>Cargar CSV</button>
+          </div>
+          <div style="height:8px"></div>
+          <div class="btn-row">
+            <button class="btn btn-outline-blue" id="loadDemoBtn"><i data-lucide="flask-conical"></i>Datos de prueba</button>
+            <button class="btn btn-outline-blue" id="loadRealDemoBtn"><i data-lucide="route"></i>Datos sintéticos FV</button>
+          </div>
+          <input type="file" id="csvFileInput" class="file-input-hidden" accept=".csv,text/csv">
+        </div>
+
+        <div id="fileBannerWrap" style="display:none;">
+          <div class="file-banner">
+            <i data-lucide="file-check-2"></i>
+            <span id="fileBannerText">archivo.csv</span>
+          </div>
+        </div>
+
+        <div id="auditEmptyState">
+          <div class="empty-state">
+            <i data-lucide="satellite-dish"></i>
+            <div class="es-title">Sin datos cargados</div>
+            <div class="es-sub">Sube el .CSV exportado por el hardware GPS o carga datos de prueba para ver la auditoría del recorrido.</div>
+          </div>
+        </div>
+
+        <div id="auditResults" style="display:none; flex-direction:column; gap:16px;">
+
+          <div>
+            <div class="section-label">Indicadores</div>
+            <div style="height:10px"></div>
+            <div class="kpi-grid" id="kpiGrid"></div>
+          </div>
+
+          <div id="alertsSection" style="display:none;">
+            <div class="section-label">Alertas y recomendaciones</div>
+            <div style="height:10px"></div>
+            <div class="alerts-container" id="alertsContainer"></div>
+          </div>
+
+          <div>
+            <div class="section-label">Timeline de eventos</div>
+            <div style="height:10px"></div>
+            <div class="timeline" id="timeline"></div>
+          </div>
+
+          <div>
+            <div class="section-label">Leyenda del mapa</div>
+            <div style="height:10px"></div>
+            <div class="legend">
+              <div class="legend-item"><span class="legend-swatch dashed" style="border-color:#8B96AD"></span>Ruta ideal (OSRM)</div>
+              <div class="legend-item"><span class="legend-swatch" style="border-color:#3E8DFF"></span>Ruta real (GPS)</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#fff;border-color:#3E8DFF"></span>Ping GPS</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#FB5B57;border-color:#FB5B57"></span>Parada (&lt;2 km/h)</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#F5B84B;border-color:#F5B84B"></span>Exceso velocidad</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#34D399;border-color:#34D399"></span>Inicio&nbsp;&nbsp;<span class="legend-dot" style="background:#111;border-color:#111"></span>Fin</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-label">Histórico y comparación</div>
+            <div style="height:10px"></div>
+            <div class="btn-row">
+              <button class="btn btn-secondary" id="saveAuditBtn" style="display:none;"><i data-lucide="save"></i>Guardar Viaje</button>
+              <button class="btn btn-secondary" id="viewHistoryBtn"><i data-lucide="history"></i>Ver Histórico</button>
+            </div>
+          </div>
+
+          <button class="btn btn-secondary" id="exportPdfBtn"><i data-lucide="file-down"></i>Exportar Reporte PDF</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ---------------- TAB: HISTÓRICO (oculto inicialmente) ---------------- -->
+    <div class="tab-panel" id="panel-history" style="display:none;">
+      <div class="sidebar-scroll">
+
+        <div>
+          <div class="section-label">Viajes guardados</div>
+          <div style="height:10px"></div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="backToAuditBtn"><i data-lucide="arrow-left"></i>Volver</button>
+          <button class="btn btn-secondary" id="clearHistoryBtn"><i data-lucide="trash-2"></i>Limpiar</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ---------------- TAB: PLANIFICAR RUTA ---------------- -->
+    <div class="tab-panel" id="panel-plan">
+      <div class="sidebar-scroll">
+
+        <div>
+          <div class="section-label">Origen</div>
+          <div style="height:10px"></div>
+          <div class="origin-card">
+            <span class="origin-dot"></span>
+            <div class="oc-text">
+              <div class="oc-name">Planta FV</div>
+              <div class="oc-coords" id="originCoords">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Personal a transportar</div>
+          <div style="height:10px"></div>
+          <div class="employee-list" id="employeeList"></div>
+        </div>
+
+        <button class="btn btn-primary" id="generateRouteBtn"><i data-lucide="sparkles"></i>Generar Ruta Óptima</button>
+
+        <div class="route-result" id="routeResult">
+          <div class="route-result-title"><i data-lucide="check-circle-2"></i>Ruta calculada</div>
+          <div class="route-result-grid">
+            <div class="rr-stat">
+              <div class="rr-val" id="rrKm">—</div>
+              <div class="rr-lbl">Km aprobados</div>
+            </div>
+            <div class="rr-stat">
+              <div class="rr-val" id="rrTime">—</div>
+              <div class="rr-lbl">Tiempo estimado</div>
+            </div>
+          </div>
+          <div>
+            <div class="section-label" style="margin-bottom:6px;">Orden de paradas</div>
+            <div class="route-order" id="routeOrder"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ---------------- TAB: ADMINISTRACIÓN ---------------- -->
+    <div class="tab-panel" id="panel-admin">
+      <div class="sidebar-scroll">
+        <div class="role-switcher" aria-label="Selector de perfil">
+          <div class="role-switcher-label"><i data-lucide="badge-check"></i>Perfil de acceso</div>
+          <div class="role-switcher-buttons">
+            <button class="role-btn active" data-role="superadmin">Superadmin</button>
+            <button class="role-btn" data-role="normal">Usuario normal</button>
+          </div>
+        </div>
+        <div class="admin-intro">
+          <div class="admin-kicker"><i data-lucide="shield-check"></i>Control operativo</div>
+          <div class="admin-title">Asignar personal a paradas</div>
+          <div class="admin-subtitle">Arrastra una persona desde “No viajan” a una parada. También puedes moverla entre paradas.</div>
+        </div>
+
+        <div class="admin-summary" id="adminSummary"></div>
+
+        <div>
+          <div class="section-label">Orden de recogida</div>
+          <div style="height:10px"></div>
+          <div class="admin-stops" id="adminStops"></div>
+        </div>
+
+        <div class="admin-no-go" id="adminNoGo" data-stop-id="none">
+          <div class="admin-dropzone-header">
+            <div><span class="admin-zone-dot muted"></span><strong>No viajan</strong></div>
+            <span class="admin-count" id="adminNoGoCount">0</span>
+          </div>
+          <div class="admin-dropzone" data-drop-zone="none"></div>
+        </div>
+
+        <button class="btn btn-secondary" id="resetAssignmentsBtn"><i data-lucide="rotate-ccw"></i>Restablecer asignaciones</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- =========================== MAP =========================== -->
+  <div class="map-wrap">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Abrir panel"><i data-lucide="menu"></i></button>
+    <div id="map"></div>
+    <div class="map-badge" id="mapBadge">CartoDB Voyager · OSRM demo</div>
+  </div>
+
+</div>
+
+<!-- =========================== PRINT-ONLY REPORT HEADER =========================== -->
+<div class="print-only" id="printReport">
+  <div class="print-header">
+    <div>
+      <h1>Reporte de Auditoría de Ruta — FV</h1>
+    </div>
+    <div class="ph-meta">
+      <div id="printFileName">archivo.csv</div>
+      <div id="printDate">—</div>
+    </div>
+  </div>
+
+  <div class="print-executive-summary" id="printExecutiveSummary"></div>
+
+  <div class="print-kpi-grid" id="printKpiGrid"></div>
+
+  <div class="print-alerts" id="printAlerts"></div>
+
+  <div class="print-legend">
+    <span><i style="display:inline-block;width:14px;height:2px;background:#8B96AD;"></i>Ruta ideal OSRM</span>
+    <span><i style="display:inline-block;width:14px;height:2px;background:#3E8DFF;"></i>Ruta real GPS</span>
+    <span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#FB5B57;"></i>Paradas</span>
+    <span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#F5B84B;"></i>Excesos velocidad</span>
+    <span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#34D399;"></i>Inicio</span>
+    <span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#111;"></i>Fin</span>
+  </div>
+</div>
+
+<!-- JavaScript de la aplicación -->
+<script src="app.js"></script>
+
+</body>
+</html>
