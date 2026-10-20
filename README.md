@@ -45,7 +45,7 @@ mvp-moviq/
 1. Abre `dashboard-telemetria-fv.html` directamente en tu navegador
 
 2. **Requiere conexión a internet**: El dashboard carga desde CDN:
-   - Tiles de CartoDB Voyager
+   - Tiles de OpenStreetMap
    - OSRM público para routing
    - Google Fonts
 
@@ -177,7 +177,7 @@ Según documento de propuesta de negocio:
 ## Stack Técnico
 
 - **100% Frontend**: HTML, CSS, JavaScript vanilla
-- **Mapas**: Leaflet + CartoDB Voyager tiles
+- **Mapas**: Leaflet + OpenStreetMap tiles
 - **Routing**: OSRM público
 - **Iconos**: Lucide icons
 - **Sin build step**: Se puede abrir directamente en el navegador

@@ -29,7 +29,7 @@ mantenerse defendible frente a un proveedor que va a disputar el número.
   explícitamente — romper el "un solo archivo listo para correr" es un cambio de
   alcance, no un detalle técnico.
 - **Leaflet** (inyectado nativamente vía CDN, no react-leaflet) para el mapa.
-- **CartoDB Voyager** como basemap (tiles raster, sin API key).
+- **OpenStreetMap** (`tile.openstreetmap.org`) como basemap (tiles raster, sin API key; CARTO pasó a exigir key).
 - **OSRM público** (`https://router.project-osrm.org`) para routing:
   - `/trip/v1/driving/` → pestaña Planificar Ruta (resuelve TSP con
     `source=first&roundtrip=false`).
@@ -164,7 +164,7 @@ que está fuera de `.app` en el DOM. Reglas:
 ## Cómo correr / probar
 
 No hay build. Abrir el `.html` directamente en el navegador (doble clic o
-`Live Server` de VS Code). Requiere internet: tiles de CartoDB, OSRM público y
+`Live Server` de VS Code). Requiere internet: tiles de OpenStreetMap, OSRM público y
 Google Fonts se cargan desde CDN — no hay modo offline.
 
 Para probar sin un CSV real, usar el botón "Datos de prueba" (pestaña
